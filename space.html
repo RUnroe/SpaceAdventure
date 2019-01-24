@@ -1,0 +1,594 @@
+<!doctype HTML>
+<title>Space Adventure</title>
+
+<link rel="shortcut icon" href="img/rocket.png">
+
+
+<center>
+<div id="top">
+<div class="main">
+
+<h1>Space Adventure!</h1>
+<img src="">
+<p id="output"></p>
+<input id="input" type="text" placeHolder="Enter your action..." autofocus>
+<button>Enter</button>
+<p id="pathways"></p>
+
+<h3>Actions (Arrow keys work)</h3>
+<p id="actions"> North, South, East, West, Take, Use, Drop, Press</p>
+
+
+
+</div>
+</div>
+</center>
+
+<style>
+@font-face{
+    font-family:future;
+    src: url("spaceage.ttf");
+    }
+    .main{
+        background-color:#141414;
+         position:relative;
+        display:inline-block;
+        vertical-align:top;
+        width:580px;
+        height:738px;
+        padding-top:10px;
+        border:solid white 2px;
+    }
+    body{
+      background-image:url("img/space.png"); 
+      background-size:contain;
+
+    }
+    h1,h3,p,li,a{
+        color:white;
+    }
+    #output{
+        font-size:18px;
+    }
+    h1{
+        font-size:55px;
+        font-family:"future";
+    }
+    img{
+        border: solid white 2px;
+    }
+    #top{
+        padding-top:40px;
+    }
+    p{
+        padding-left:20px;
+        padding-right:20px;
+        
+    }
+</style>
+
+<script>
+var map = [];
+    map[0] = "A window showing Earth";
+    map[1] = "The cockpit";
+    map[2] = "Control room";
+    map[3] = "The bathroom";
+    map[4] = "Escape pods";
+    map[5] = "A damaged room";
+    map[6] = "Labratory";
+    map[7] = "The dining tables";
+    map[8] = "The gym";
+    map[9] = "The lobby";
+    map[10] = "The brig";
+    map[11] = "The kitchen";
+    map[12] = "Engine room. You see a <i>pressable</i> button";
+    map[13] = "Supply closet";
+    map[14] = "Captain's bedroom";
+    map[15] = "Crew bedrooms";
+    map[16] = "You lose!";
+    map[17] = "You win!";
+    
+    
+var images = [];
+images[0] = "Window.png";
+images[1] = "Cockpit.png";
+images[2] = "ControlRoom.png";
+images[3] = "Bathroom.png";
+images[4] = "EscapePods.png";
+images[5] = "Room.png";
+images[6] = "Lab.png";
+images[7] = "Dining.png";
+images[8] = "Gym.png";
+images[9] = "Lobby.png";
+images[10] = "Brig.png";
+images[11] = "Kitchen.png";
+images[12] = "EngineRoom.png";
+images[13] = "Closet.png";
+images[14] = "CaptainsRoom.png";
+images[15] = "CrewRoom.png";
+images[16] = "Lose.png";/* Lose */
+images[17] = "Win.png";/* Win */   
+    
+    
+var blockedPathMessages = [];
+blockedPathMessages[0] = "You can't go out there!";
+blockedPathMessages[1] = "You can't move in that direction.";    
+blockedPathMessages[2] = "You can't move in that direction.";
+blockedPathMessages[3] = "You can't move in that direction.";
+blockedPathMessages[4] = "You can't move in that direction.";
+blockedPathMessages[5] = "";
+blockedPathMessages[6] = "";
+blockedPathMessages[7] = "You can't move in that direction.";
+blockedPathMessages[8] = "You can't move in that direction.";
+blockedPathMessages[9] = "";
+blockedPathMessages[10] = "";    
+blockedPathMessages[11] = "You can't move in that direction.";
+blockedPathMessages[12] = "You can't move in that direction.";
+blockedPathMessages[13] = "You can't move in that direction.";
+blockedPathMessages[14] = "You can't move in that direction.";
+blockedPathMessages[15] = "You can't move in that direction.";
+
+
+// north, south, east, west
+//   0      1      2     3
+
+var movePerm = [];
+movePerm[0] = [false, true, true, false];
+movePerm[1] = [false, true, false, true]; ///////
+movePerm[2] = [false, true, true, true];
+movePerm[3] = [false, true, false, false]; ///////
+movePerm[4] = [true, true, true, false];
+movePerm[5] = [true, true, true, true];
+movePerm[6] = [false, true, true, true]; ///////
+movePerm[7] = [true, true, false, true];
+movePerm[8] = [true, true, true, false];
+movePerm[9] = [true, true, true, true];
+movePerm[10] = [true, true, true, true];
+movePerm[11] = [true, true, false, true];
+movePerm[12] = [true, false, true, false];
+movePerm[13] = [true, false, true, true];
+movePerm[14] = [true, false, true, true];
+movePerm[15] = [true, false, false, true];
+
+    var metalUse = 0;
+    var repair = 0;
+
+    var metalPlaced = 0;
+
+    var items = ["potion", "lockpick", "soap"];
+    var itemLocations = [6, 13, 3];
+   
+    
+    var mapLocation = 15;
+    
+    var backpack = [];
+    var playerInput = "";
+    var gameMessage = "An asteroid has struck the spaceship! You need to repair the holes or escape in the escape pods!";
+    
+    var possibleActions = ["north", "east", "south", "west", "take", "use", "drop", "press"];
+    var action = "";
+    
+    var itemsIKnow = ["tools", "metal", "lockpick", "keycard", "repairkit", "food", "potion", "soap"];
+    var item = "";
+    
+    var image = document.querySelector("img");
+    var output = document.querySelector('#output');
+    var input = document.querySelector('#input');
+    var actions = document.querySelector("#actions");
+    
+    var pathways = document.querySelector("#pathways");
+    
+    var button = document.querySelector("button");
+    button.style.cursor = "pointer";
+    button.addEventListener("click", clickHandler, false);
+    
+    render();
+    
+    function clickHandler(){
+        playGame();
+        input.value = "";
+    }
+
+    function playGame(){
+        playerInput = input.value;
+        playerInput = playerInput.toLowerCase();
+        
+        gameMessage = "";
+        action = "";
+        
+        
+        
+        
+        for(var i=0; i < possibleActions.length; i++){
+            if(playerInput.indexOf(possibleActions[i]) !== -1){
+                action = possibleActions[i];
+                console.log("player's action: " + action);
+                break;
+            }
+        }
+        for(i=0; i < itemsIKnow.length; i++){
+            if(playerInput.indexOf(itemsIKnow[i]) !== -1){
+                item = itemsIKnow[i];
+                console.log("player's item: " + item);
+        }
+            }
+    
+        
+     switch(action){
+            case "north": 
+                north();
+                break;
+            case "east":
+                east();
+                break;
+            case "south":
+                south();
+                break;
+            case "west":
+                west();
+                break;
+            case "take":
+                takeItem();
+                break;
+            case "drop":
+                dropItem();
+                break;
+            case "use":
+                useItem();
+                break;
+            case "escape":
+                escape();
+                break;
+            case "press":
+                pressButton();
+                break;
+            default:
+            gameMessage ="I don't understand that.";
+        }
+    
+        
+    
+    
+    
+    render();
+    
+    }
+    
+    
+    
+     window.addEventListener("keyup", movement, false);
+        function movement(event){
+            //console.log("keyCode = " + event.keyCode);
+        if(event.keyCode == 38){
+            //Up arrow
+            north();
+            } 
+        if(event.keyCode == 40){
+            //down arrow
+            south();
+            }
+    
+        if(event.keyCode == 39){
+            //right arrow
+            east();
+            }
+        if(event.keyCode == 37){
+            //left arrow
+            west();
+            }
+        }
+        
+        
+        
+    
+    
+    
+    function north(){
+        if(mapLocation < 16){
+            if(movePerm[mapLocation] [0]){
+                mapLocation -=4;
+            }
+            else{
+                gameMessage = blockedPathMessages[mapLocation];
+            }
+        }
+        render();
+    }
+    
+    function south(){
+            if(mapLocation < 16){
+                    if(movePerm[mapLocation] [1]){
+                        mapLocation +=4;
+            }
+            else{
+                 gameMessage = blockedPathMessages[mapLocation];
+            }
+        }
+        render();
+    }
+    
+    function east(){
+        if(mapLocation < 16){
+            if(movePerm[mapLocation] [2]){
+                mapLocation +=1;
+            }
+            else{
+                gameMessage = blockedPathMessages[mapLocation];
+            }
+        }
+        render();
+    }
+    
+    function west(){
+        if(mapLocation < 16){
+            if(movePerm[mapLocation] [3]){
+                mapLocation -=1;
+            }
+            else{
+                gameMessage = blockedPathMessages[mapLocation];
+            }
+        }
+        render();
+    }
+    
+    
+
+
+
+    
+    
+    
+    
+    
+    
+    
+    
+    function takeItem(){
+            var itemIndexNumber = items.indexOf(item);
+            
+            if(itemIndexNumber !== -1 && itemLocations[itemIndexNumber] === mapLocation){
+                gameMessage = "you take the " + item + ".";
+            
+                backpack.push(item);
+                
+                items.splice(itemIndexNumber, 1);
+                itemLocations.splice(itemIndexNumber, 1);
+            }
+            else{
+                gameMessage = "You can't do that.";
+            }
+        }
+      
+    
+    
+    function dropItem(){
+            if (backpack.length !== 0){
+                var backpackIndexNumber = backpack.indexOf(item);
+                
+                if(backpackIndexNumber !== -1){
+                    gameMessage = "You drop the " + item + ".";
+                    
+                    items.push(backpack[backpackIndexNumber]);
+                    itemLocations.push(mapLocation);
+                    
+                    backpack.splice(backpackIndexNumber, 1);
+                }
+                else{
+                    gameMessage = "You can't do that.";
+                }
+                
+            }
+            else{
+                gameMessage = "You're not carrying anything.";
+            }
+        }
+    
+    
+    
+    
+    
+    
+    function useItem(){
+            var backpackIndexNumber = backpack.indexOf(item);
+            
+            if(backpackIndexNumber === -1){
+                gameMessage = "You're not carrying it.";
+            }
+            if(backpack.length === 0){
+                gameMessage += " Your backpack is empty";
+            }
+            if (backpackIndexNumber !== -1){
+                switch(item){
+                    case "lockpick":
+                        if(mapLocation === 14){
+                            gameMessage = "You use the lockpick on the safe in the Captain's room.";
+                            gameMessage += " You found a keycard!";
+                            backpack.splice(backpackIndexNumber, 1);
+                            
+                            items.push("keycard");
+                            itemLocations.push(mapLocation);
+                        }
+                        else if(mapLocation === 10){
+                            gameMessage = "You picked the lock and let the prisoner out. You get shanked and die.";
+                            death();                           
+                        }
+                        else{
+                            gameMessage = "You can't use the lockpick here.";
+                        }
+                        break;
+                    case "keycard":
+                        if(mapLocation === 11){
+                            gameMessage = "You use your keycard to get into the kitchen. ";
+                            gameMessage += "You can serve the food to the crew members in the DINING room!";
+                            
+                            
+                            items.push("food");
+                            itemLocations.push(mapLocation);
+                        }
+                        else if(mapLocation === 2){
+                            gameMessage = "You ready the Escape Pods!";
+                            possibleActions.push("escape");
+                            actions.innerHTML += ", Escape";
+                        }
+                        else{
+                            gameMessage = "You can't use that here. (find a keycard sign)";
+                        }
+                        break;
+                    case "food":
+                        if (mapLocation === 7){
+                            gameMessage = "You give the food to the crew members. ";
+                            gameMessage += "They finish eating and put their tools away in their rooms.";
+                            backpack.splice(backpackIndexNumber, 1);
+                            
+                            items.push("tools");
+                            itemLocations.push(15);
+                            
+                        }
+                        else{
+                            gameMessage = "There is no one to give the food to here.";
+                        }
+                        break;
+                    case "tools":
+                        if (mapLocation === 8){
+                            gameMessage = "You use your tools to scrap the metal from the weights. ";
+                            gameMessage += "Metal drops on the ground.";
+                            
+                            items.push("metal");
+                            itemLocations.push(8);
+                        }
+                        else if((mapLocation === 9||mapLocation === 5) && metalPlaced === 1){
+                           
+                            metalPlaced = 0;
+                            repair++;
+                            if(repair === 2){
+                                gameMessage = "You repaired the ship!";
+                                win();
+                            }
+                        }
+                        else{
+                            gameMessage = "Try to find a place to scrap metal.";
+                        }
+                        break;
+                    case "metal":
+                        if (mapLocation === 9||mapLocation === 5){
+                            gameMessage = "You place down the metal over the hole. Use your tools to finish repairing it.";
+                            metalPlaced = 1;
+                            metalUse++;
+                            if(metalUse === 2){
+                                backpack.splice(backpackIndexNumber, 1);
+                            }
+                        }
+                        break;
+                    case "potion":
+                        gameMessage = "The potion was poisonous!";
+                        death();
+                        
+                        
+                }
+            }
+            
+            
+        }
+    
+    
+        function escape(){
+            if(mapLocation === 4){
+                gameMessage += "You got in the escape pod.";
+                var randomNum = Math.floor(Math.random() * 10) + 1;
+                if(randomNum > 8){
+                    gameMessage = "You successfully escape!";
+                    win();
+                }
+                else 
+                {
+                    gameMessage= "The escape pod blew up!";
+                    death();
+                }
+            }
+        }
+        
+    
+        function pressButton(){
+            if(mapLocation === 12){
+                movePerm[1] = [false, true, true, true]; 
+                movePerm[3] = [false, true, false, true]; 
+                movePerm[6] = [true, true, true, true]; 
+                gameMessage = "You have unlocked the Control Room!";
+            }
+            else{
+                gameMessage = "You can't do that here.";
+            }
+        }
+    
+    
+    
+    
+
+    
+    function death(){
+        mapLocation = 16;
+
+    }
+    
+    function win(){
+        mapLocation = 17;
+
+    }
+    
+    
+     window.addEventListener("keydown", keydownHandler, false);
+    
+        function keydownHandler(event){
+           // console.log("keyCode = " + event.keyCode);
+            if(event.keyCode === 13){
+              //Enter
+              clickHandler();
+            }
+        }
+    
+    
+    function render(){
+        output.innerHTML = map[mapLocation];
+            image.src = "img/" + images[mapLocation];
+            
+            
+            for(var i = 0; i < items.length; i++){
+                if(mapLocation === itemLocations[i]){
+                    output.innerHTML
+                    +="<br>You see a <strong>"
+                    + items[i]
+                    + "</strong> here.";
+                }
+            }
+            
+            output.innerHTML += "<br><em>" + gameMessage + "</em>";
+            
+            if(backpack.length !== 0){
+                output.innerHTML += "<br>You are carrying: " + backpack.join(", ");
+            }
+    
+    
+            pathways.innerHTML = "You can move: ";
+        if (movePerm[mapLocation][0]) {
+            pathways.innerHTML += "<b>North</b>";
+    }
+        if (movePerm[mapLocation][1]) {
+            if(movePerm[mapLocation][0]){
+                pathways.innerHTML += ", <b>South</b>";
+        }
+            else{
+                pathways.innerHTML += "<b>South</b>";
+            }
+    }
+        if (movePerm[mapLocation][2]) {
+            pathways.innerHTML += ", <b>East</b>";
+    }
+        if (movePerm[mapLocation][3]) {
+            pathways.innerHTML += ", <b>West</b>";
+    }
+    
+    }
+    
+</script>
+
+
